@@ -61,9 +61,12 @@
     const webAppUrl = "https://script.google.com/macros/s/AKfycby71RymofSLqHiUforJ6rLN9q3HHjvVKMOkNWf6pRgJKBzNbE8zZmqQAgWXbsfj1aTB/exec";
 
     function kirimKeSpreadsheet(data) {
-      fetch(webAppUrl + "?barcode=" + encodeURIComponent(data), {
+      fetch(webAppUrl, {
         method: "POST",
-        mode: "no-cors"
+        body: JSON.stringify({ barcode: data }),
+        headers: {
+          "Content-Type": "application/json"
+        }
       }).then(() => {
         console.log("Terkirim:", data);
       }).catch(err => {
