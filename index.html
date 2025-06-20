@@ -3,18 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Absensi Barcode</title>
+  <title>Scan Barcode Absensi</title>
   <script src="https://unpkg.com/@zxing/library@latest"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f8;
-      text-align: center;
+      margin: 0;
       padding: 20px;
+      text-align: center;
     }
 
     h1 {
       color: #2c3e50;
+      font-size: 24px;
     }
 
     video {
@@ -26,20 +28,21 @@
     }
 
     #result {
-      font-size: 1.4em;
-      margin: 10px;
+      font-size: 1.6em;
+      color: #2c3e50;
+      margin: 10px 0;
       font-weight: bold;
     }
 
     #debug {
       color: #e74c3c;
-      white-space: pre-wrap;
+      margin-top: 10px;
     }
 
     footer {
-      font-size: 0.8em;
+      font-size: 0.9em;
       margin-top: 30px;
-      color: #aaa;
+      color: #888;
     }
   </style>
 </head>
@@ -47,15 +50,13 @@
   <h1>📷 Scan Barcode Absensi</h1>
   <video id="video" playsinline></video>
   <p>Hasil: <span id="result">-</span></p>
-  <pre id="debug"></pre>
-  <footer>© 2025 Finnmircz</footer>
+  <p id="debug"></p>
+  <footer>© 2025 Finnmircz3652222</footer>
 
   <script>
-    const videoElement = document.getElementById("video");
-    const resultEl = document.getElementById("result");
-    const debug = document.getElementById("debug");
-
-    const sheetDB_API = "https://sheetdb.io/api/v1/paqf2uehxxltw";
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    const videoElement = document.getElementById('video');
+    const debug = document.getElementById('debug');
 
     function kirimKeSheetDB(barcode) {
       const waktu = new Date().toISOString();
@@ -66,36 +67,38 @@
         }
       };
 
-      fetch(sheetDB_API, {
+      fetch("https://sheetdb.io/api/v1/3jdqqia2qs09r", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(data)
-      })
-      .then(() => {
-        debug.textContent = "✅ Data terkirim: " + JSON.stringify(data, null, 2);
-      })
-      .catch(err => {
-        debug.textContent = "❌ Gagal kirim: " + err;
+      }).then(response => {
+        console.log("✅ Data terkirim:", data);
+        debug.textContent = "✅ Terkirim: " + barcode;
+      }).catch(error => {
+        console.error("❌ Gagal kirim:", error);
+        debug.textContent = "❌ Gagal mengirim ke SheetDB";
       });
     }
 
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-
     codeReader.listVideoInputDevices().then(devices => {
-      if (devices.length === 0) {
+      if (!devices.length) {
         debug.textContent = "❌ Kamera tidak ditemukan";
         return;
       }
 
-      codeReader.decodeFromVideoDevice(devices[0].deviceId, videoElement, (result, err) => {
+      const camId = devices[0].deviceId;
+      codeReader.decodeFromVideoDevice(camId, videoElement, (result, err) => {
         if (result) {
           const barcode = result.text;
-          resultEl.textContent = barcode;
+          document.getElementById("result").textContent = barcode;
           kirimKeSheetDB(barcode);
         }
       });
     }).catch(err => {
-      debug.textContent = "⚠️ Gagal mengakses kamera: " + err;
+      debug.textContent = "⚠️ Gagal akses kamera";
+      console.error(err);
     });
   </script>
 </body>
