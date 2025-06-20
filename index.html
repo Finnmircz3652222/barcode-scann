@@ -5,56 +5,47 @@
   <script src="https://unpkg.com/@zxing/library@latest"></script>
 </head>
 <body>
-  <h2>Scan Barcode / QR Code</h2>
+  <h2>Scan Barcode</h2>
   <video id="video" width="300" height="200" style="border:1px solid black;"></video>
   <p>Hasil: <span id="result">-</span></p>
-  <p id="debug" style="color: red;"></p>
+  <p id="debug" style="color:red;"></p>
 
   <script>
     const codeReader = new ZXing.BrowserMultiFormatReader();
     const videoElement = document.getElementById('video');
     const debug = document.getElementById('debug');
 
-    const googleFormUrl = "https://docs.google.com/forms/d/e/1FAIpQLSc1-ykHngTUem13JSOXv2e9uDWEl_2WuV6WGiEBiO8TlUmyBA/formResponse";
-    const entryId = "entry.1254733081";
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbwT4RXfLfJP5axiljiHnA5K82CrTnlj3mv5n3EPYk05zkpZlNZuefFBUhufsRlBH8w6/exec";
 
-    function kirimKeGoogleForm(data) {
-      const formData = new FormData();
-      formData.append(entryId, data);
-
-      fetch(googleFormUrl, {
+    function kirimKeSpreadsheet(data) {
+      fetch(webAppUrl + "?barcode=" + encodeURIComponent(data), {
         method: "POST",
-        mode: "no-cors",
-        body: formData
+        mode: "no-cors"
       }).then(() => {
-        console.log("Terkirim ke Google Form:", data);
+        console.log("Terkirim:", data);
       }).catch(err => {
         console.error("Gagal kirim:", err);
-        debug.textContent = "Gagal kirim ke Form.";
+        debug.textContent = "❌ Gagal kirim data ke spreadsheet.";
       });
     }
 
-    codeReader
-      .listVideoInputDevices()
-      .then(devices => {
-        if (!devices || devices.length === 0) {
-          debug.textContent = "❌ Kamera tidak ditemukan. Pastikan Anda sudah memberikan izin akses kamera.";
-          return;
+    codeReader.listVideoInputDevices().then(devices => {
+      if (!devices.length) {
+        debug.textContent = "❌ Kamera tidak ditemukan";
+        return;
+      }
+      const camId = devices[0].deviceId;
+      codeReader.decodeFromVideoDevice(camId, videoElement, (result, err) => {
+        if (result) {
+          const text = result.text;
+          document.getElementById("result").textContent = text;
+          kirimKeSpreadsheet(text);
         }
-
-        const camId = devices[0].deviceId;
-        codeReader.decodeFromVideoDevice(camId, videoElement, (result, err) => {
-          if (result) {
-            const scanned = result.text;
-            document.getElementById("result").textContent = scanned;
-            kirimKeGoogleForm(scanned);
-          }
-        });
-      })
-      .catch(err => {
-        console.error("Error kamera:", err);
-        debug.textContent = "⚠️ Gagal mendeteksi kamera. Coba buka di browser lain atau aktifkan HTTPS.";
       });
+    }).catch(err => {
+      console.error(err);
+      debug.textContent = "⚠️ Gagal mendeteksi kamera";
+    });
   </script>
 </body>
 </html>
