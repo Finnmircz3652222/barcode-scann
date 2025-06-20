@@ -71,10 +71,6 @@
     const debug = document.getElementById('debug');
     const logList = document.getElementById('scan-log');
 
-    // Variabel untuk menyimpan barcode terakhir dan waktu scan
-    let lastScan = "";
-    let lastTime = 0;
-
     function kirimKeSheetDB(barcode) {
       const waktu = new Date().toISOString();
       const data = {
@@ -84,7 +80,7 @@
         }
       };
 
-      fetch("https://sheetdb.io/api/v1/3jdqqia2qs09r", {
+      fetch("https://sheetdb.io/api/v1/paqf2uehxxltw", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -113,18 +109,8 @@
       codeReader.decodeFromVideoDevice(camId, videoElement, (resultObj, err) => {
         if (resultObj) {
           const barcode = resultObj.text;
-          const now = Date.now();
-
-          if (barcode !== lastScan || now - lastTime > 2000) {
-            // Simpan scan terakhir dan waktunya
-            lastScan = barcode;
-            lastTime = now;
-
-            result.textContent = `✅ ID Terbaca: ${barcode}`;
-            kirimKeSheetDB(barcode);
-          } else {
-            debug.textContent = "⏳ Barcode sama, tunggu 2 detik dulu...";
-          }
+          result.textContent = `✅ ID Terbaca: ${barcode}`;
+          kirimKeSheetDB(barcode);
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
           debug.textContent = "⚠️ Error scan: " + err;
         }
