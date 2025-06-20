@@ -1,21 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scan Barcode</title>
   <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 24px;
+    }
+
+    video {
+      width: 90%;
+      max-width: 480px;
+      border: 4px solid #3498db;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+
+    #result {
+      font-size: 1.6em;
+      color: #2c3e50;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    #debug {
+      color: #e74c3c;
+      margin-top: 10px;
+    }
+
+    footer {
+      font-size: 0.9em;
+      margin-top: 30px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
-  <h2>Scan Barcode</h2>
-  <video id="video" width="300" height="200" style="border:1px solid black;"></video>
+  <h1>📷 Scan Barcode / QR Code</h1>
+  <video id="video" playsinline></video>
   <p>Hasil: <span id="result">-</span></p>
-  <p id="debug" style="color:red;"></p>
+  <p id="debug"></p>
+  <footer>© 2025 Finnmircz3652222</footer>
 
   <script>
     const codeReader = new ZXing.BrowserMultiFormatReader();
     const videoElement = document.getElementById('video');
     const debug = document.getElementById('debug');
 
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbxr6mmwfnkwWdnP0xWHcEZ_p9i11x6B2uCkxhU3nZw/exec";
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbzCP5zibV34jVrsbOoFRu80wGGu-4_NEW8ZLfD0x7OF5uhdz_0rIAA7cysisEfjbicm/exec";
 
     function kirimKeSpreadsheet(data) {
       fetch(webAppUrl + "?barcode=" + encodeURIComponent(data), {
