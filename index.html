@@ -3,20 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Scan Barcode</title>
+  <title>Absensi Barcode</title>
   <script src="https://unpkg.com/@zxing/library@latest"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f8;
-      margin: 0;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
     }
 
     h1 {
       color: #2c3e50;
-      font-size: 24px;
     }
 
     video {
@@ -28,69 +26,76 @@
     }
 
     #result {
-      font-size: 1.6em;
-      color: #2c3e50;
-      margin: 10px 0;
+      font-size: 1.4em;
+      margin: 10px;
       font-weight: bold;
     }
 
     #debug {
       color: #e74c3c;
-      margin-top: 10px;
+      white-space: pre-wrap;
     }
 
     footer {
-      font-size: 0.9em;
+      font-size: 0.8em;
       margin-top: 30px;
-      color: #888;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-  <h1>📷 Scan Barcode / QR Code</h1>
+  <h1>📷 Scan Barcode Absensi</h1>
   <video id="video" playsinline></video>
   <p>Hasil: <span id="result">-</span></p>
-  <p id="debug"></p>
-  <footer>© 2025 Finnmircz3652222</footer>
+  <pre id="debug"></pre>
+  <footer>© 2025 Finnmircz</footer>
 
   <script>
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-    const videoElement = document.getElementById('video');
-    const debug = document.getElementById('debug');
+    const videoElement = document.getElementById("video");
+    const resultEl = document.getElementById("result");
+    const debug = document.getElementById("debug");
 
-    const webAppUrl = "https://script.google.com/macros/s/AKfycby71RymofSLqHiUforJ6rLN9q3HHjvVKMOkNWf6pRgJKBzNbE8zZmqQAgWXbsfj1aTB/exec";
+    const sheetDB_API = "https://sheetdb.io/api/v1/paqf2uehxxltw";
 
-    function kirimKeSpreadsheet(data) {
-      fetch(webAppUrl, {
-        method: "POST",
-        body: JSON.stringify({ barcode: data }),
-        headers: {
-          "Content-Type": "application/json"
+    function kirimKeSheetDB(barcode) {
+      const waktu = new Date().toISOString();
+      const data = {
+        data: {
+          id: barcode,
+          waktu: waktu
         }
-      }).then(() => {
-        console.log("Terkirim:", data);
-      }).catch(err => {
-        console.error("Gagal kirim:", err);
-        debug.textContent = "❌ Gagal kirim data ke spreadsheet.";
+      };
+
+      fetch(sheetDB_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(() => {
+        debug.textContent = "✅ Data terkirim: " + JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        debug.textContent = "❌ Gagal kirim: " + err;
       });
     }
 
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+
     codeReader.listVideoInputDevices().then(devices => {
-      if (!devices.length) {
+      if (devices.length === 0) {
         debug.textContent = "❌ Kamera tidak ditemukan";
         return;
       }
-      const camId = devices[0].deviceId;
-      codeReader.decodeFromVideoDevice(camId, videoElement, (result, err) => {
+
+      codeReader.decodeFromVideoDevice(devices[0].deviceId, videoElement, (result, err) => {
         if (result) {
-          const text = result.text;
-          document.getElementById("result").textContent = text;
-          kirimKeSpreadsheet(text);
+          const barcode = result.text;
+          resultEl.textContent = barcode;
+          kirimKeSheetDB(barcode);
         }
       });
     }).catch(err => {
-      console.error(err);
-      debug.textContent = "⚠️ Gagal mendeteksi kamera";
+      debug.textContent = "⚠️ Gagal mengakses kamera: " + err;
     });
   </script>
 </body>
