@@ -14,10 +14,7 @@
       text-align: center;
     }
 
-    h1 {
-      color: #2c3e50;
-      font-size: 24px;
-    }
+    h1 { color: #2c3e50; font-size: 24px; }
 
     video {
       width: 90%;
@@ -65,39 +62,50 @@
   <footer>© 2025 Finnmircz3652222</footer>
 
   <script>
+    // URL endpoint for Google Apps Script to handle barcode attendance submissions.
+    // Update this constant if the script deployment changes.
+    const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0_OO15wqdF-BXgCxNdDKh2OMqsLE8EUS2USl25GbF3UkumWJaqAnsSvGZgYBBTX30/exec";
+
     const codeReader = new ZXing.BrowserMultiFormatReader();
     const videoElement = document.getElementById('video');
     const result = document.getElementById('result');
     const debug = document.getElementById('debug');
     const logList = document.getElementById('scan-log');
 
-    function kirimKeSheetDB(barcode) {
+    function kirimKeScript(barcode) {
       const waktu = new Date().toISOString();
-      const data = {
-        data: {
-          id: barcode,
-          waktu: waktu
-        }
-      };
+      const data = { id: barcode };
 
-      fetch("https://sheetdb.io/api/v1/paqf2uehxxltw", {
+      fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: "POST",
+        body: JSON.stringify(data),
         headers: {
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      }).then(() => {
-        debug.textContent = "✅ Data terkirim: " + barcode;
-      }).catch(error => {
-        console.error("❌ Gagal kirim:", error);
-        debug.textContent = "❌ Gagal mengirim ke SheetDB";
+        }
+      })
+      .then(res => res.text())
+      .then(resText => {
+        if (resText === "Sudah absen") {
+          result.textContent = `⚠️ ${barcode} sudah absen hari ini`;
+        } else if (resText === "Berhasil") {
+          result.textContent = `✅ ${barcode} berhasil absen`;
+          const li = document.createElement("li");
+          li.textContent = `🆔 ${barcode} - ⏱️ ${waktu}`;
+          logList.prepend(li);
+        } else {
+          result.textContent = `❌ Respon tidak dikenali: ${resText}`;
+        }
+        debug.textContent = "📡 Status: " + resText;
+      })
+      .catch(err => {
+        console.error(err);
+        debug.textContent = "❌ Gagal kirim data";
       });
-
-      // Tambahkan ke riwayat scan
-      const li = document.createElement("li");
-      li.textContent = `🆔 ${barcode} - ⏱️ ${waktu}`;
-      logList.prepend(li);
     }
+
+    let lastScanned = "";
+    let lastScanTime = 0;
+    const SCAN_COOLDOWN_MS = 3000; // 3 seconds cooldown
 
     codeReader.listVideoInputDevices().then(devices => {
       if (!devices.length) {
@@ -109,8 +117,14 @@
       codeReader.decodeFromVideoDevice(camId, videoElement, (resultObj, err) => {
         if (resultObj) {
           const barcode = resultObj.text;
-          result.textContent = `✅ ID Terbaca: ${barcode}`;
-          kirimKeSheetDB(barcode);
+          const now = Date.now();
+          // Perbaikan: cooldown hanya berlaku untuk barcode yang sama
+          if (barcode !== lastScanned || (barcode === lastScanned && now - lastScanTime > SCAN_COOLDOWN_MS)) {
+            lastScanned = barcode;
+            lastScanTime = now;
+            result.textContent = `✅ ID Terbaca: ${barcode}`;
+            kirimKeScript(barcode);
+          }
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
           debug.textContent = "⚠️ Error scan: " + err;
         }
